@@ -21,8 +21,8 @@
 ! CHESSBOARD
 */
 .chessboard{
-  height: 801px;
-  width: 801px;
+  height: 800px;
+  width: 800px;
   background-color: #779556;
   display: grid;
   grid-template-columns: repeat(8, 100px);

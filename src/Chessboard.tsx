@@ -4,10 +4,11 @@ import { Position } from './Position';
 import { Piece } from './Pieces';
 import { PieceType, Player } from './Types';
 import { Pawn } from './Pawn';
+import { act } from 'react-dom/test-utils';
 
 const vertical = ['1', '2', '3', '4', '5', '6', '7', '8'];
 const horizontal = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-const grid = 100;
+const grid: number = 100;
 
 const pieceImages = {
   [Player.Black]: {
@@ -47,6 +48,67 @@ function createPieces(team: Player, row: number, pawnRow: number){
 
 const Chessboard = () => {
 
+  const [active, setActive] = useState<HTMLElement | null>(null);
+  const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
+  const boardRef = useRef<HTMLDivElement>(null);
+
+  function grabPiece(e: React.MouseEvent){
+    const target = e.target as HTMLElement;
+    const board = boardRef.current;
+
+    if(target.classList.contains('chess-piece') && board){
+      const grabX = Math.floor((e.clientX - board.offsetLeft) / grid);
+      // ? It works just fine when i omit the 800 - out of there, so idk? it is there only for the position of Y to be inverted ?
+      const grabY = Math.floor(800 - (e.clientY - board.offsetTop) / grid); 
+      setGrabPosition(new Position(grabX, grabY));
+
+      const x = e.clientX - grid / 2;
+      const y = e.clientY - grid / 2;
+      target.style.position = "absolute";
+      target.style.left = `${x}px`;
+      target.style.top = `${y}px`;
+      
+      setActive(target);  
+    };
+  };
+  
+  function movePiece(e: React.MouseEvent){
+    const board = boardRef.current;
+      if(active && board){
+      const minX = board.offsetLeft - 25;
+      const minY = board.offsetTop - 25;
+      const maxX = board.offsetLeft + board.clientWidth - 75;
+      const maxY = board.offsetTop + board.clientHeight - 75;
+      const x = e.clientX - 50;
+      const y = e.clientY - 50;
+
+      active.style.position = "absolute";
+      // Checking if the x is lower or higher than the set extremes
+      if(x < minX) {
+        active.style.left = `${minX}px`;
+      } else if (x > maxX) {
+        active.style.left = `${maxX}px`;
+      } else {
+        active.style.left = `${x}px`;
+      };
+
+      if(y < minY){
+        active.style.top = `${minY}px`;
+      } else if(y > maxY){
+        active.style.top = `${maxY}px`;
+      } else{
+        active.style.top = `${y}px`;
+      };
+    };
+  };
+
+  function dropPiece(e: React.MouseEvent){
+    const board = boardRef.current;
+    if(active && board){
+      setActive(null)
+    }
+  };
+
   const blackPieces = createPieces(Player.Black, 7, 6);
   const whitePieces = createPieces(Player.White, 0, 1);
 
@@ -79,7 +141,7 @@ const Chessboard = () => {
     };
 
   return (
-    <div className='chessboard'>
+    <div className='chessboard' onMouseDown={(e) => grabPiece(e)} onMouseMove={(e) => movePiece(e)} onMouseUp={(e) => dropPiece(e)} ref={boardRef} >
       {initialBoard}
     </div>
     )
