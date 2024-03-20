@@ -6,19 +6,25 @@ export class Piece{
     position: Position;
     type: PieceType;
     team: Player;
-    // possibleMoves?: Position[];
+    possibleMoves?: Position[];
     // ? Id say the possibleMoves is neccessary but not sure about the hasMoved
     hasMoved: boolean;
 
-    constructor(position: Position, img: string, type: PieceType, team: Player, hasMoved: boolean){
-        // ! Need to rename the pictures like this
+    constructor(position: Position, img: string, type: PieceType, team: Player, hasMoved: boolean, possibleMoves: Position[] = []){
+        // // ! Need to rename the pictures like this
         this.img = `assets/${team}_${type}.png`;
         this.position = position;
         this.type = type;
         this.team = team;
-        // this.possibleMoves = possibleMoves;
+        this.possibleMoves = this.possibleMoves;
         this.hasMoved = hasMoved;      
-    }
+    };
 
+    samePos (newPos: Position): boolean{
+        return this.position.samePos(newPos);
+    };
     
+    clone(): Piece{
+        return new Piece(this.position.clone(), this.img, this.type, this.team, this.hasMoved, this.possibleMoves?.map(m => m.clone()));
+    }
 }

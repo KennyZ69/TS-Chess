@@ -4,7 +4,6 @@ import { Position } from './Position';
 import { Piece } from './Pieces';
 import { PieceType, Player } from './Types';
 import { Pawn } from './Pawn';
-import { act } from 'react-dom/test-utils';
 
 const vertical = ['1', '2', '3', '4', '5', '6', '7', '8'];
 const horizontal = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -47,11 +46,20 @@ function createPieces(team: Player, row: number, pawnRow: number){
 }
 
 const Chessboard = () => {
-
+  // ! Try to make it work with the state of piece array... working on te grid snapping still
+  // const [pieces, setPieces] = useState<Piece[]>([]);
+  // const [gridXY, setGridXY] = useState<Position>(new Position(-1, -1))
   const [active, setActive] = useState<HTMLElement | null>(null);
   const [grabPosition, setGrabPosition] = useState<Position>(new Position(-1, -1));
   const boardRef = useRef<HTMLDivElement>(null);
 
+  // const blackPieces = createPieces(Player.Black, 7, 6);
+  // const whitePieces = createPieces(Player.White, 0, 1);
+  // setPieces([...blackPieces, ...whitePieces]);
+  // console.log(pieces);
+  const pieces: Piece[] = [...createPieces(Player.Black, 7, 6), ...createPieces(Player.White, 0, 1)];
+  // setPieces(piecesConst)
+  
   function grabPiece(e: React.MouseEvent){
     const target = e.target as HTMLElement;
     const board = boardRef.current;
@@ -59,7 +67,10 @@ const Chessboard = () => {
     if(target.classList.contains('chess-piece') && board){
       const grabX = Math.floor((e.clientX - board.offsetLeft) / grid);
       // ? It works just fine when i omit the 800 - out of there, so idk? it is there only for the position of Y to be inverted ?
-      const grabY = Math.floor(800 - (e.clientY - board.offsetTop) / grid); 
+      // const grabY = Math.floor(800 - (e.clientY - board.offsetTop) / grid); 
+      const grabY = Math.abs(
+        Math.ceil((e.clientY - board.offsetTop - 800) / grid)
+      );
       setGrabPosition(new Position(grabX, grabY));
 
       const x = e.clientX - grid / 2;
@@ -101,18 +112,50 @@ const Chessboard = () => {
       };
     };
   };
-
+  // console.log(pieces);
+  
   function dropPiece(e: React.MouseEvent){
     const board = boardRef.current;
     if(active && board){
+      // const x = Math.floor((e.clientX - board.offsetLeft) / grid);
+      // const y = Math.floor(800 - (e.clientY - board.offsetTop) / grid);
+      const x = Math.floor((e.clientX - board.offsetLeft) / grid) * grid + grid / 2;
+      const y = Math.floor((e.clientY - board.offsetTop) / grid) * grid + grid / 2;
+      // active.style.left = `${x}px`;
+      // active.style.top = `${y}px`;
+      // setGrabPosition(new Position(x, y));
+      // setPieces((value) => {
+      //   const pieces = value.map((p) => {
+      //     if(p.position === grabPosition){
+      //       p.position = new Position(x, y);
+      //     }
+      //     return p;
+      //   });
+      //   return pieces
+      // });
+      // // ! figure out why this is always throwin undefined even though there actually is piece matching the position
+      // console.log(x, y);
+      const draggingPiece = pieces.find((p) => {
+          p.samePos(grabPosition);
+          return p;
+        });
+        // console.log(draggingPiece);
+        
+      if(draggingPiece) {
+        draggingPiece.position = new Position(x / grid, 7 - y / grid);
+      
+      active.style.left = `${board.offsetLeft + x - grid / 2}px`;
+      active.style.top = `${board.offsetTop + y - grid / 2}px`;
+    };
+      // ! Found out that i actually set the new position of the draggingPiece but i do not change the tiles classes when there is or isnt a piece on it so the css isnt applying
+      // console.log(draggingPiece?.position);
+      
       setActive(null)
-    }
+    };
   };
 
-  const blackPieces = createPieces(Player.Black, 7, 6);
-  const whitePieces = createPieces(Player.White, 0, 1);
 
-    let initialBoard: JSX.Element[]  = [];
+    const board: JSX.Element[]  = [];
 
     for(let i = vertical.length - 1; i >= 0; i-- ){
       for(let j = 0; j < horizontal.length; j++){
@@ -120,21 +163,31 @@ const Chessboard = () => {
         const tileId = j + i + 2;
         let piece: any = null;
        
-        blackPieces.forEach(p => {
+        // blackPieces.forEach(p => {
+        //   if(p.position.x === j && p.position.y === i){
+        //     piece = p;
+        //   }
+        // });
+
+        // whitePieces.forEach(p => {
+        //   if(p.position.x === j && p.position.y === i){
+        //     piece = p;
+        //   }
+        // });
+        pieces.forEach(p => {
           if(p.position.x === j && p.position.y === i){
             piece = p;
           }
         });
+        // let piece: Piece | undefined= pieces.find((p) => {
+        //   p.samePos(new Position(j, i));
+        // }) 
 
-        whitePieces.forEach(p => {
-          if(p.position.x === j && p.position.y === i){
-            piece = p;
-          }
-        });
+        const image = piece ? piece.img : undefined;
+        const currentPiece = active != null ? pieces.find((p) => p.samePos(grabPosition)) : undefined;
+        // const highlight = currentPiece?.possibleMoves ? currentPiece.possibleMoves.some(p => p.samePos(new Position(i, j))) : false;
 
-        const image = piece ? piece.img : null;
-
-        initialBoard.push(
+        board.push(
           <Tile tileId={tileId} highlight={false} img={image} key={`${horizontal[j]}${vertical[i]}`}/>
         )
       }
@@ -142,7 +195,7 @@ const Chessboard = () => {
 
   return (
     <div className='chessboard' onMouseDown={(e) => grabPiece(e)} onMouseMove={(e) => movePiece(e)} onMouseUp={(e) => dropPiece(e)} ref={boardRef} >
-      {initialBoard}
+      {board}
     </div>
     )
 }
