@@ -121,13 +121,16 @@ const Chessboard = () => {
       // });
       
       if(draggingPiece) {
-        console.log(draggingPiece);
-        
-        draggingPiece.position = new Position(x / grid, 7 - y / grid);
-        referee.isValidMove(grabPosition, new Position(x, y), draggingPiece.type, draggingPiece.team);
-      
-      active.style.left = `${board.offsetLeft + x }px`;
-      active.style.top = `${board.offsetTop + y }px`;
+        const validMove = referee.isValidMove(grabPosition, new Position(x / grid, 7 - y / grid), draggingPiece.type, draggingPiece.team, pieces);
+        if(validMove){
+          draggingPiece.position = new Position(x / grid, 7 - y / grid);
+          active.style.left = `${board.offsetLeft + x }px`;
+          active.style.top = `${board.offsetTop + y }px`;
+        } else{
+          active.style.position = "relative";
+          active.style.removeProperty("top");
+          active.style.removeProperty("left");
+        }
     };
       // // ! Found out that i actually set the new position of the draggingPiece but i do not change the tiles classes when there is or isnt a piece on it so the css isnt applying
       setActive(null);
