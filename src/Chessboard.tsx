@@ -42,11 +42,11 @@ function createPieces(team: Player, row: number, pawnRow: number){
     PieceType.Rook
   ].map((type, col) => new Piece(new Position(col, row), pieceImages[team][type], type, team, false));
   // Push pawns in there
-  pieces.push(...horizontal.map((file, col) => new Pawn(pieceImages[team][PieceType.Pawn], new Position(col, pawnRow), PieceType.Pawn, team, false )))
+  pieces.push(...horizontal.map((file, col) => new Pawn(pieceImages[team][PieceType.Pawn], new Position(col, pawnRow), PieceType.Pawn, team, [], false )))
 
   return pieces;
 }
-const pieces: Piece[] = [...createPieces(Player.Black, 7, 6), ...createPieces(Player.White, 0, 1)];
+let pieces: Piece[] = [...createPieces(Player.Black, 7, 6), ...createPieces(Player.White, 0, 1)];
 
 const Chessboard = () => {
   // // ! Try to make it work with the state of piece array... working on te grid snapping still
@@ -81,14 +81,14 @@ const Chessboard = () => {
   
   function movePiece(e: React.MouseEvent){
     const board = boardRef.current;
-      if(active && board){
+    if(active && board){
       const minX = board.offsetLeft - 25;
       const minY = board.offsetTop - 25;
       const maxX = board.offsetLeft + board.clientWidth - 75;
       const maxY = board.offsetTop + board.clientHeight - 75;
       const x = e.clientX - 50;
       const y = e.clientY - 50;
-
+      
       active.style.position = "absolute";
       // Checking if the x is lower or higher than the set extremes
       if(x < minX) {
@@ -98,7 +98,7 @@ const Chessboard = () => {
       } else {
         active.style.left = `${x}px`;
       };
-
+      
       if(y < minY){
         active.style.top = `${minY}px`;
       } else if(y > maxY){
@@ -114,25 +114,27 @@ const Chessboard = () => {
     if(active && board){
       const x = Math.floor((e.clientX - board.offsetLeft) / grid) * grid ;
       const y = Math.floor((e.clientY - board.offsetTop) / grid) * grid ;
-
       // const draggingPiece = pieces.find((p) => {
       //   p.samePos(grabPosition);
       //   return p;
       // });
-      
+      const enemyOnTile = pieces.find(p => p.samePos(new Position(x / grid, 7 - y / 100)));
       if(draggingPiece) {
+        // // ! Try to figure out why isnt this ref logging in
+        const isEnPassant = referee.isEnPassant(grabPosition, new Position(x / grid, 7 - y / grid), pieces, draggingPiece.type, draggingPiece.team)
         const validMove = referee.isValidMove(grabPosition, new Position(x / grid, 7 - y / grid), draggingPiece.type, draggingPiece.team, pieces);
         if(validMove){
           draggingPiece.position = new Position(x / grid, 7 - y / grid);
           active.style.left = `${board.offsetLeft + x }px`;
           active.style.top = `${board.offsetTop + y }px`;
+          // Check if there is a enemy piece in the way of a validMove, so that you can take it with the pawn
+          if(enemyOnTile) pieces = pieces.filter(p => p !== enemyOnTile);
         } else{
-          active.style.position = "relative";
+          active.style.position = "relative"; 
           active.style.removeProperty("top");
           active.style.removeProperty("left");
         }
     };
-      // // ! Found out that i actually set the new position of the draggingPiece but i do not change the tiles classes when there is or isnt a piece on it so the css isnt applying
       setActive(null);
       setDraggingPiece(null);
     };
