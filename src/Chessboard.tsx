@@ -114,17 +114,23 @@ const Chessboard = () => {
     if(active && board){
       const x = Math.floor((e.clientX - board.offsetLeft) / grid) * grid ;
       const y = Math.floor((e.clientY - board.offsetTop) / grid) * grid ;
-      // const draggingPiece = pieces.find((p) => {
-      //   p.samePos(grabPosition);
-      //   return p;
-      // });
-      const enemyOnTile = pieces.find(p => p.samePos(new Position(x / grid, 7 - y / 100)));
+      // Checking (if im moving pawns) if there is possible enPassant move and finding the attacked piece by enPassant to remove it
+      const enPassantDirection = draggingPiece?.team === Player.White ? 1 : -1;
+      // ? Maybe could rewrite every new Position that uses this to the const of newPos (if i'll be still using all of them)
+      const newPos = new Position(x / grid, 7 - y / grid)
+      const enPassantPiece = pieces.find(p => p.position.y === newPos.y - enPassantDirection && p.position.x === newPos.x && (p as Pawn).enPassant)
+
+      const enemyOnTile = pieces.find(p => p.samePos(newPos));
       if(draggingPiece) {
-        // // ! Try to figure out why isnt this ref logging in
-        const isEnPassant = referee.isEnPassant(grabPosition, new Position(x / grid, 7 - y / grid), pieces, draggingPiece.type, draggingPiece.team)
-        const validMove = referee.isValidMove(grabPosition, new Position(x / grid, 7 - y / grid), draggingPiece.type, draggingPiece.team, pieces);
-        if(validMove){
-          draggingPiece.position = new Position(x / grid, 7 - y / grid);
+        const isEnPassant = referee.isEnPassant(grabPosition, newPos, pieces, draggingPiece.type, draggingPiece.team)
+        const validMove = referee.isValidMove(grabPosition, newPos, draggingPiece.type, draggingPiece.team, pieces);
+        if(isEnPassant){
+          pieces = pieces.filter(p => p !== enPassantPiece)
+          draggingPiece.position = newPos;
+          active.style.left = `${board.offsetLeft + x }px`;
+          active.style.top = `${board.offsetTop + y }px`;
+        } else if(validMove){
+          draggingPiece.position = newPos;
           active.style.left = `${board.offsetLeft + x }px`;
           active.style.top = `${board.offsetTop + y }px`;
           // Check if there is a enemy piece in the way of a validMove, so that you can take it with the pawn

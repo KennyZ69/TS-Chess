@@ -17,18 +17,15 @@ export class Referee{
         } else{
             draggingPiece.enPassant = false
         }
-        // // const pieceForEnPassant = boardState.find(p => p.position.x === position.x - moveDirection && p.position.y === position.y && p.team !== team);
-        // // console.log(pieceForEnPassant);
         
-        // //     if(pieceForEnPassant != null && (pieceForEnPassant as Pawn).enPassant){
-        // //         return true;
-        // //     } else {
-        // //         return false;
-        // //     }
         if(type === PieceType.Pawn){
             if((position.x - destination.x === 1 || position.x - destination.x === -1) && destination.y - position.y === moveDirection){
-                const piece = boardState.find(p => p.position.x === position.x - moveDirection && p.position.y === position.y && (p as Pawn).enPassant);
-                console.log(piece)
+                // Finding the piece im attacking
+                const attackedPiece = boardState.find(p => p.position.x === destination.x && p.position.y === destination.y - moveDirection && (p as Pawn).enPassant)
+                console.log(attackedPiece)
+                if(attackedPiece) {
+                    return true;
+                }
             }
         }
         return false;
